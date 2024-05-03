@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, Subject } from 'rxjs';
 
 import { ProductService } from '../product.service';
 
@@ -11,7 +11,8 @@ import { ProductService } from '../product.service';
 })
 export class ProductListAltComponent {
   pageTitle = 'Products';
-  errorMessage = '';
+  private errorMessageSubject = new Subject<string>();
+  errorMessage$ = this.errorMessageSubject.asObservable();
 
   private productService = inject(ProductService);
 
@@ -19,7 +20,7 @@ export class ProductListAltComponent {
   products$ = this.productService.productsWithCategory$
     .pipe(
       catchError(err => {
-        this.errorMessage = err;
+        this.errorMessageSubject.next(err);
         return EMPTY;
       })
     )
