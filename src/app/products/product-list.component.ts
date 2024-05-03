@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { catchError, combineLatest, EMPTY, filter, map, Subject } from 'rxjs';
+import { catchError, combineLatest, EMPTY, filter, map, startWith, Subject } from 'rxjs';
 import { ProductService } from './product.service';
 import { ProductCategoryService } from "../product-categories/product-category.service";
 
@@ -18,11 +18,15 @@ export class ProductListComponent {
   constructor() { }
 
   private categorySelectedSubject = new Subject<number>();
+  // private categorySelectedSubject = new BehaviourSubject<number>(0);  requires an initial value!
   categorySelectedAction$ = this.categorySelectedSubject.asObservable();
 
   products$ = combineLatest([
     this.productService.productsWithCategory$,
     this.categorySelectedAction$
+      .pipe(
+        startWith(0)
+      )
   ]).pipe(
       map(([products, selectedCategoryId]) =>
       products.filter((product: any)=>
@@ -42,15 +46,11 @@ export class ProductListComponent {
       })
     );
 
-
-
-
-
   onAdd(): void {
     console.log('Not yet implemented');
   }
 
   onSelected(categoryId: string): void {
-
+    this.categorySelectedSubject.next(+categoryId)
   }
 }
