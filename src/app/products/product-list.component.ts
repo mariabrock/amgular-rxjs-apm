@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-
-import { catchError, EMPTY} from 'rxjs';
-import { ProductCategory } from '../product-categories/product-category';
-
+import { catchError, combineLatest, EMPTY, filter, map, Subject } from 'rxjs';
 import { ProductService } from './product.service';
+import { ProductCategoryService } from "../product-categories/product-category.service";
 
 @Component({
   templateUrl: './product-list.component.html',
@@ -13,19 +11,39 @@ import { ProductService } from './product.service';
 export class ProductListComponent {
   pageTitle = 'Product List';
   errorMessage = '';
-  categories: ProductCategory[] = [];
 
   public productService = inject(ProductService);
+  public productCategoryService = inject(ProductCategoryService);
 
   constructor() { }
 
-  products$ = this.productService.productsWithCategory$
+  private categorySelectedSubject = new Subject<number>();
+  categorySelectedAction$ = this.categorySelectedSubject.asObservable();
+
+  products$ = combineLatest([
+    this.productService.productsWithCategory$,
+    this.categorySelectedAction$
+  ]).pipe(
+      map(([products, selectedCategoryId]) =>
+      products.filter((product: any)=>
+        selectedCategoryId ? product.categoryId === selectedCategoryId : true
+      )),
+      catchError( err => {
+        this.errorMessage = err;
+        return EMPTY
+      })
+    );
+
+  categories$ = this.productCategoryService.productCategories$
     .pipe(
       catchError(err => {
         this.errorMessage = err;
         return EMPTY;
       })
-    )
+    );
+
+
+
 
 
   onAdd(): void {
@@ -33,6 +51,6 @@ export class ProductListComponent {
   }
 
   onSelected(categoryId: string): void {
-    console.log('Not yet implemented');
+
   }
 }
