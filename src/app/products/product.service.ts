@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 
-import { catchError, combineLatest, combineLatestWith, map, Observable, tap, throwError } from 'rxjs';
+import { BehaviorSubject, catchError, combineLatest, combineLatestWith, map, Observable, tap, throwError } from 'rxjs';
 
 import { Product } from './product';
 import { ProductCategoryService } from "../product-categories/product-category.service";
@@ -32,16 +32,34 @@ export class ProductService {
     this.products$$,
     this.productCategoryService.productCategories$
   ]).pipe(
-    map(([products, categories]) =>
+    map(([products, categories]) => //this is destructuring the object
     products.map(product => ({
       ...product,
-      price: product.price? product.price * 1.5 : 0,
+      price: product.price? product.price * 1.5 : 0, // doing the transforming
       category: categories.find(c => product.categoryId === c.id)?.name,
       searchKey: [product.productName]
     }) as Product))
-  )
+  );
+
+  private productSelectedSubject = new BehaviorSubject(0);
+  productSelectedAction$ = this.productSelectedSubject.asObservable();
+
+  selectedProduct$ = combineLatest([
+    this.productsWithCategory$,
+    this.productSelectedAction$
+  ])
+    .pipe(
+      map(([products, selectedProductId]) =>
+      products.find(product => product.id === selectedProductId)
+      ),
+      tap(product => console.log('selectedProduct', product))
+    );
 
   constructor() { }
+
+  selectedProductChanged(selectedProductId: number) {
+    this.productSelectedSubject.next(selectedProductId);
+  }
 
   private fakeProduct(): Product {
     return {
