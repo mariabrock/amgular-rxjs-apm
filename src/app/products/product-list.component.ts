@@ -23,7 +23,7 @@ export class ProductListComponent {
   categorySelectedAction$ = this.categorySelectedSubject.asObservable();
 
   products$ = combineLatest([
-    this.productService.productsWithCategory$,
+    this.productService.productsToAdd$,
     this.categorySelectedAction$
       .pipe(
         startWith(0)
