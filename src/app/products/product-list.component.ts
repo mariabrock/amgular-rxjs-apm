@@ -48,7 +48,7 @@ export class ProductListComponent {
     );
 
   onAdd(): void {
-    console.log('Not yet implemented');
+    this.productService.addProduct();
   }
 
   onSelected(categoryId: string): void {
