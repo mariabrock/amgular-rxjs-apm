@@ -7,7 +7,7 @@ import {
   combineLatest,
   combineLatestWith,
   map, merge,
-  Observable, scan,
+  Observable, scan, shareReplay,
   Subject,
   tap,
   throwError
@@ -42,7 +42,8 @@ export class ProductService {
       price: product.price? product.price * 1.5 : 0, // doing the transforming, add properties as needed
       category: categories.find(c => product.categoryId === c.id)?.name,
       searchKey: [product.productName]
-    }) as Product))
+    }) as Product)),
+    shareReplay(1) // caching our data
   );
 
   private productSelectedSubject = new BehaviorSubject(0);
@@ -56,7 +57,8 @@ export class ProductService {
       map(([products, selectedProductId]) =>
       products.find(product => product.id === selectedProductId)
       ),
-      tap(product => console.log('selectedProduct', product))
+      tap(product => console.log('selectedProduct', product)),
+      shareReplay(1) // caching our data
     );
 
   private productAddedSubject = new Subject<Product>();
