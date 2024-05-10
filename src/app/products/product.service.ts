@@ -15,6 +15,7 @@ import {
 
 import { Product } from './product';
 import { ProductCategoryService } from "../product-categories/product-category.service";
+import { SupplierService } from "../suppliers/supplier.service";
 
 @Injectable({
   providedIn: 'root'
@@ -25,10 +26,11 @@ export class ProductService {
 
   private http = inject(HttpClient);
   private productCategoryService = inject(ProductCategoryService);
+  private supplierService = inject(SupplierService);
 
   products$$ = this.http.get<Product[]>(this.productsUrl)
     .pipe(
-      tap(data => console.log('Products: ', JSON.stringify(data))),
+      // tap(data => console.log('Products: ', JSON.stringify(data))),
       catchError(this.handleError)
     );
 
