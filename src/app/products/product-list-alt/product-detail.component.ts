@@ -3,7 +3,8 @@ import { Supplier } from '../../suppliers/supplier';
 import { Product } from '../product';
 
 import { ProductService } from '../product.service';
-import { catchError, EMPTY, map, Subject } from "rxjs";
+import { catchError, EMPTY, filter, map, Subject } from "rxjs";
+import { combineLatest } from "rxjs";
 
 @Component({
   selector: 'pm-product-detail',
@@ -37,6 +38,17 @@ export class ProductDetailComponent {
         return EMPTY;
       })
     )
+
+  // this combines all streams to make getting info on our template easier
+  // vm stands for 'view model'
+  vm$ = combineLatest([
+    this.product$,
+    this.productSuppliers$,
+    this.pageTitle$
+  ]).pipe(
+      filter(([product]) => Boolean(product)),
+      map(([product, productSuppliers, pageTitle]) => ({product, productSuppliers, pageTitle}))
+    );
 
   constructor() { }
 
