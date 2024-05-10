@@ -5,10 +5,10 @@ import {
   BehaviorSubject,
   catchError,
   combineLatest,
-  combineLatestWith,
+  combineLatestWith, filter, forkJoin,
   map, merge,
-  Observable, scan, shareReplay,
-  Subject,
+  Observable, of, scan, shareReplay,
+  Subject, switchMap,
   tap,
   throwError
 } from 'rxjs';
@@ -16,6 +16,7 @@ import {
 import { Product } from './product';
 import { ProductCategoryService } from "../product-categories/product-category.service";
 import { SupplierService } from "../suppliers/supplier.service";
+import { Supplier } from "../suppliers/supplier";
 
 @Injectable({
   providedIn: 'root'
@@ -63,14 +64,28 @@ export class ProductService {
       shareReplay(1) // caching our data
     );
 
-  selectedProductSuppliers$ = combineLatest([
-    this.selectedProduct$,
-    this.supplierService.suppliers$
-  ]).pipe(
-    map(([selectedProduct, suppliers]) =>  // array destructuring to assign a variable to each emission
-    suppliers.filter(supplier => selectedProduct?.supplierIds?.includes(supplier.id)) // filter to only the suppliers in the products array of supplier ids
+  // selectedProductSuppliers$ = combineLatest([  // the "get it all" approach
+  //   this.selectedProduct$,
+  //   this.supplierService.suppliers$
+  // ]).pipe(
+  //   map(([selectedProduct, suppliers]) =>  // array destructuring to assign a variable to each emission
+  //   suppliers.filter(supplier => selectedProduct?.supplierIds?.includes(supplier.id)) // filter to only the suppliers in the products array of supplier ids
+  //   )
+  // );
+
+  selectedProductSuppliers$ = this.selectedProduct$  // ths "just in time" approach
+    .pipe(
+      filter(product => Boolean(product)),
+      switchMap(selectedProduct => {
+        if (selectedProduct?.supplierIds) {
+          return forkJoin(selectedProduct.supplierIds.map(supplierId =>
+          this.http.get<Supplier>(`${this.suppliersUrl}/${supplierId}`)))
+        } else {
+          return of([]);
+        }
+      }),
+      tap(suppliers => console.log('product suppliers', JSON.stringify(suppliers)))
     )
-  );
 
   private productAddedSubject = new Subject<Product>();
   productAddedAction$ = this.productAddedSubject.asObservable();
