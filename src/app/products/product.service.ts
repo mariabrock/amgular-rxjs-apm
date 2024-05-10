@@ -7,7 +7,7 @@ import {
   combineLatest,
   combineLatestWith,
   map, merge,
-  Observable, scan,
+  Observable, scan, shareReplay,
   Subject,
   tap,
   throwError
@@ -15,6 +15,7 @@ import {
 
 import { Product } from './product';
 import { ProductCategoryService } from "../product-categories/product-category.service";
+import { SupplierService } from "../suppliers/supplier.service";
 
 @Injectable({
   providedIn: 'root'
@@ -25,10 +26,11 @@ export class ProductService {
 
   private http = inject(HttpClient);
   private productCategoryService = inject(ProductCategoryService);
+  private supplierService = inject(SupplierService);
 
   products$$ = this.http.get<Product[]>(this.productsUrl)
     .pipe(
-      tap(data => console.log('Products: ', JSON.stringify(data))),
+      // tap(data => console.log('Products: ', JSON.stringify(data))),
       catchError(this.handleError)
     );
 
@@ -42,7 +44,8 @@ export class ProductService {
       price: product.price? product.price * 1.5 : 0, // doing the transforming, add properties as needed
       category: categories.find(c => product.categoryId === c.id)?.name,
       searchKey: [product.productName]
-    }) as Product))
+    }) as Product)),
+    shareReplay(1) // caching our data
   );
 
   private productSelectedSubject = new BehaviorSubject(0);
@@ -56,7 +59,8 @@ export class ProductService {
       map(([products, selectedProductId]) =>
       products.find(product => product.id === selectedProductId)
       ),
-      tap(product => console.log('selectedProduct', product))
+      tap(product => console.log('selectedProduct', product)),
+      shareReplay(1) // caching our data
     );
 
   private productAddedSubject = new Subject<Product>();
